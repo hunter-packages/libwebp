@@ -352,6 +352,13 @@ configure_package_config_file(
   INSTALL_DESTINATION ${ConfigPackageLocation}
 )
 
+foreach(INSTALLED_LIBRARY ${INSTALLED_LIBRARIES})
+    target_include_directories(${INSTALLED_LIBRARY} PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/>
+        $<INSTALL_INTERFACE:include>
+    )
+endforeach()
+
 install(TARGETS ${INSTALLED_LIBRARIES}
     EXPORT ${targets_export_name}
     LIBRARY DESTINATION lib COMPONENT Runtime
