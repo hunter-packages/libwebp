@@ -65,17 +65,17 @@ endif()
 find_package(PNG CONFIG REQUIRED)
 find_package(JPEG CONFIG REQUIRED)
 find_package(TIFF CONFIG REQUIRED)
-find_package(giflib CONFIG REQUIRED)
+#find_package(giflib CONFIG REQUIRED) # doesn't build on Android
 set(WEBP_HAVE_PNG 1)
 set(WEBP_HAVE_JPEG 1)
 set(WEBP_HAVE_TIFF 1)
-set(WEBP_HAVE_GIF 1)
+set(WEBP_HAVE_GIF 0) # doesn't build on Android
 set(PNG_FOUND 1)
 set(JPEG_FOUND 1)
 set(TIFF_FOUND 1)
-set(GIF_FOUND 1)
+set(GIF_FOUND 0) # doesn't build on Android
 list(APPEND WEBP_DEP_IMG_LIBRARIES PNG::png JPEG::jpeg TIFF::libtiff)
-list(APPEND WEBP_DEP_GIF_LIBRARIES giflib::giflib)
+#list(APPEND WEBP_DEP_GIF_LIBRARIES giflib::giflib) # doesn't build on Android
 
 ## Check for specific headers.
 include(CheckIncludeFiles)

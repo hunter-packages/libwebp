@@ -54,7 +54,7 @@ if(ANDROID)
   add_library(cpufeatures STATIC
     ${ANDROID_NDK}/sources/android/cpufeatures/cpu-features.c
   )
-  target_link_libraries(cpufeatures dl)
+  target_link_libraries(cpufeatures PUBLIC dl)
   set(WEBP_DEP_LIBRARIES ${WEBP_DEP_LIBRARIES} cpufeatures)
   set(WEBP_DEP_INCLUDE_DIRS ${WEBP_DEP_INCLUDE_DIRS}
     ${ANDROID_NDK}/sources/android/cpufeatures
@@ -127,7 +127,7 @@ add_library(webputilsdecode OBJECT ${WEBP_UTILS_COMMON_SRCS}
   ${WEBP_UTILS_DEC_SRCS})
 add_library(webpdecoder $<TARGET_OBJECTS:webpdecode>
   $<TARGET_OBJECTS:webpdspdecode> $<TARGET_OBJECTS:webputilsdecode>)
-target_link_libraries(webpdecoder ${WEBP_DEP_LIBRARIES})
+target_link_libraries(webpdecoder PUBLIC ${WEBP_DEP_LIBRARIES})
 
 # Build the webp library.
 add_library(webpencode OBJECT ${WEBP_ENC_SRCS})
@@ -137,7 +137,7 @@ add_library(webputils OBJECT ${WEBP_UTILS_COMMON_SRCS} ${WEBP_UTILS_DEC_SRCS}
   ${WEBP_UTILS_ENC_SRCS})
 add_library(webp $<TARGET_OBJECTS:webpdecode> $<TARGET_OBJECTS:webpdsp>
   $<TARGET_OBJECTS:webpencode> $<TARGET_OBJECTS:webputils>)
-target_link_libraries(webp ${WEBP_DEP_LIBRARIES})
+target_link_libraries(webp PUBLIC ${WEBP_DEP_LIBRARIES})
 
 # Make sure the OBJECT libraries are built with position independent code
 # (it is not ON by default).
@@ -146,7 +146,7 @@ set_target_properties(webpdecode webpdspdecode webputilsdecode
 
 # Build the webp demux library.
 add_library(webpdemux ${WEBP_DEMUX_SRCS})
-target_link_libraries(webpdemux webp)
+target_link_libraries(webpdemux PUBLIC webp)
 
 # Set the version numbers.
 function(parse_version FILE NAME VAR)
@@ -198,19 +198,19 @@ if(WEBP_BUILD_CWEBP OR WEBP_BUILD_DWEBP OR
   parse_Makefile_am(${CMAKE_CURRENT_SOURCE_DIR}/imageio "IMAGEIOUTILS_SRCS"
     "imageio_util_[^ ]*")
   add_library(imageioutil ${IMAGEIOUTILS_SRCS})
-  target_link_libraries(imageioutil webp)
+  target_link_libraries(imageioutil PUBLIC webp ${WEBP_DEP_IMG_LIBRARIES})
 
   # Image-decoding utility library.
   parse_Makefile_am(${CMAKE_CURRENT_SOURCE_DIR}/imageio "IMAGEDEC_SRCS"
     "imagedec_[^ ]*")
   add_library(imagedec ${IMAGEDEC_SRCS})
-  target_link_libraries(imagedec imageioutil webp ${WEBP_DEP_IMG_LIBRARIES})
+  target_link_libraries(imagedec PUBLIC imageioutil webp ${WEBP_DEP_IMG_LIBRARIES})
 
   # Image-encoding utility library.
   parse_Makefile_am(${CMAKE_CURRENT_SOURCE_DIR}/imageio "IMAGEENC_SRCS"
     "imageenc_[^ ]*")
   add_library(imageenc ${IMAGEENC_SRCS})
-  target_link_libraries(imageenc webp)
+  target_link_libraries(imageenc PUBLIC webp ${WEBP_DEP_IMG_LIBRARIES})
 
   set_property(TARGET exampleutil imageioutil imagedec imageenc
     PROPERTY INCLUDE_DIRECTORIES
@@ -249,7 +249,7 @@ if(WEBP_BUILD_GIF2WEBP OR WEBP_BUILD_IMG2WEBP)
   parse_Makefile_am(${CMAKE_CURRENT_SOURCE_DIR}/src/mux "WEBP_MUX_SRCS"
     "")
   add_library(webpmux ${WEBP_MUX_SRCS})
-  target_link_libraries(webpmux webp)
+  target_link_libraries(webpmux PUBLIC webp)
   parse_version(mux/Makefile.am webpmux WEBP_MUX_SOVERSION)
   set_target_properties(webpmux PROPERTIES VERSION ${PACKAGE_VERSION}
     SOVERSION ${WEBP_MUX_SOVERSION})
