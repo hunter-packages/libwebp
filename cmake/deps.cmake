@@ -62,20 +62,44 @@ if(MATH_LIBRARY)
   list(APPEND WEBP_DEP_LIBRARIES ${MATH_LIBRARY})
 endif()
 
+hunter_add_package(PNG)
 find_package(PNG CONFIG REQUIRED)
-find_package(JPEG CONFIG REQUIRED)
-find_package(TIFF CONFIG REQUIRED)
-find_package(giflib CONFIG REQUIRED)
+list(APPEND WEBP_DEP_IMG_LIBRARIES PNG::png)
 set(WEBP_HAVE_PNG 1)
-set(WEBP_HAVE_JPEG 1)
-set(WEBP_HAVE_TIFF 1)
-set(WEBP_HAVE_GIF 1)
 set(PNG_FOUND 1)
+
+hunter_add_package(Jpeg)
+find_package(JPEG CONFIG REQUIRED)
+list(APPEND WEBP_DEP_IMG_LIBRARIES JPEG::jpeg)
+set(WEBP_HAVE_JPEG 1)
 set(JPEG_FOUND 1)
-set(TIFF_FOUND 1)
-set(GIF_FOUND 1)
-list(APPEND WEBP_DEP_IMG_LIBRARIES PNG::png JPEG::jpeg TIFF::libtiff)
-list(APPEND WEBP_DEP_GIF_LIBRARIES giflib::giflib)
+
+if(MSYS)
+    # TIFF is currently not supported by hunter on MSYS
+    # https://github.com/ingenue/hunter/blob/pkg.tiff/appveyor.yml#L33
+    set(WEBP_HAVE_TIFF 0)
+    set(TIFF_FOUND 0)
+else()
+    hunter_add_package(TIFF)
+    find_package(TIFF CONFIG REQUIRED)
+    list(APPEND WEBP_DEP_IMG_LIBRARIES TIFF::libtiff)
+    set(WEBP_HAVE_TIFF 1)
+    set(TIFF_FOUND 1)
+endif()
+
+if(ANDROID OR MINGW OR MSYS)
+    # giflib is currently not supported by hunter on Android, MinGW and MSYS
+    # https://github.com/ingenue/hunter/blob/pkg.giflib/.travis.yml#L36-L44
+    # https://github.com/ingenue/hunter/blob/pkg.giflib/appveyor.yml#L30-L38
+    set(WEBP_HAVE_GIF 0)
+    set(GIF_FOUND 0)
+else()
+    hunter_add_package(giflib)
+    find_package(giflib CONFIG REQUIRED)
+    list(APPEND WEBP_DEP_GIF_LIBRARIES giflib::giflib)
+    set(WEBP_HAVE_GIF 1)
+    set(GIF_FOUND 1)
+endif()
 
 ## Check for specific headers.
 include(CheckIncludeFiles)

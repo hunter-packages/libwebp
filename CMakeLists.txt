@@ -8,11 +8,6 @@ HunterGate(
 
 project(libwebp C)
 
-hunter_add_package(PNG)
-hunter_add_package(Jpeg)
-hunter_add_package(TIFF)
-hunter_add_package(giflib)
-
 # Options for coder / decoder executables.
 option(WEBP_ENABLE_SIMD "Enable any SIMD optimization." ON)
 option(WEBP_BUILD_CWEBP "Build the cwebp command line tool." OFF)
@@ -54,7 +49,8 @@ if(ANDROID)
   add_library(cpufeatures STATIC
     ${ANDROID_NDK}/sources/android/cpufeatures/cpu-features.c
   )
-  target_link_libraries(cpufeatures dl)
+  target_link_libraries(cpufeatures PUBLIC dl)
+  list(APPEND INSTALLED_TARGETS cpufeatures)
   set(WEBP_DEP_LIBRARIES ${WEBP_DEP_LIBRARIES} cpufeatures)
   set(WEBP_DEP_INCLUDE_DIRS ${WEBP_DEP_INCLUDE_DIRS}
     ${ANDROID_NDK}/sources/android/cpufeatures
@@ -121,32 +117,36 @@ else()
   add_definitions(-Wall)
 endif()
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${WEBP_DEP_INCLUDE_DIRS})
-add_library(webpdecode OBJECT ${WEBP_DEC_SRCS})
-add_library(webpdspdecode OBJECT ${WEBP_DSP_COMMON_SRCS} ${WEBP_DSP_DEC_SRCS})
-add_library(webputilsdecode OBJECT ${WEBP_UTILS_COMMON_SRCS}
+add_library(webpdecoder 
+  ${WEBP_DEC_SRCS}
+  ${WEBP_DSP_COMMON_SRCS}
+  ${WEBP_DSP_DEC_SRCS}
+  ${WEBP_UTILS_COMMON_SRCS}
   ${WEBP_UTILS_DEC_SRCS})
-add_library(webpdecoder $<TARGET_OBJECTS:webpdecode>
-  $<TARGET_OBJECTS:webpdspdecode> $<TARGET_OBJECTS:webputilsdecode>)
-target_link_libraries(webpdecoder ${WEBP_DEP_LIBRARIES})
+target_link_libraries(webpdecoder PUBLIC ${WEBP_DEP_LIBRARIES})
+list(APPEND INSTALLED_TARGETS webpdecoder)
 
 # Build the webp library.
-add_library(webpencode OBJECT ${WEBP_ENC_SRCS})
-add_library(webpdsp OBJECT ${WEBP_DSP_COMMON_SRCS} ${WEBP_DSP_DEC_SRCS}
-  ${WEBP_DSP_ENC_SRCS})
-add_library(webputils OBJECT ${WEBP_UTILS_COMMON_SRCS} ${WEBP_UTILS_DEC_SRCS}
+add_library(webp
+  ${WEBP_DEC_SRCS}
+  ${WEBP_DSP_COMMON_SRCS}
+  ${WEBP_DSP_DEC_SRCS}
+  ${WEBP_DSP_ENC_SRCS}
+  ${WEBP_ENC_SRCS}
+  ${WEBP_UTILS_COMMON_SRCS}
+  ${WEBP_UTILS_DEC_SRCS}
   ${WEBP_UTILS_ENC_SRCS})
-add_library(webp $<TARGET_OBJECTS:webpdecode> $<TARGET_OBJECTS:webpdsp>
-  $<TARGET_OBJECTS:webpencode> $<TARGET_OBJECTS:webputils>)
-target_link_libraries(webp ${WEBP_DEP_LIBRARIES})
+target_link_libraries(webp PUBLIC ${WEBP_DEP_LIBRARIES})
+list(APPEND INSTALLED_TARGETS webp)
 
-# Make sure the OBJECT libraries are built with position independent code
+# Make sure the libraries are built with position independent code
 # (it is not ON by default).
-set_target_properties(webpdecode webpdspdecode webputilsdecode
-  webpencode webpdsp webputils PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(webpdecoder webp PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # Build the webp demux library.
 add_library(webpdemux ${WEBP_DEMUX_SRCS})
-target_link_libraries(webpdemux webp)
+target_link_libraries(webpdemux PUBLIC webp)
+list(APPEND INSTALLED_TARGETS webpdemux)
 
 # Set the version numbers.
 function(parse_version FILE NAME VAR)
@@ -166,9 +166,6 @@ set_target_properties(webpdecoder PROPERTIES VERSION ${PACKAGE_VERSION}
 parse_version(demux/Makefile.am webpdemux WEBP_DEMUX_SOVERSION)
 set_target_properties(webpdemux PROPERTIES VERSION ${PACKAGE_VERSION}
   SOVERSION ${WEBP_DEMUX_SOVERSION})
-
-# Define the libraries to install.
-set(INSTALLED_LIBRARIES webpdecoder webp webpdemux)
 
 ### Deal with SIMD.
 # Change the compile flags for SIMD files we use.
@@ -198,19 +195,19 @@ if(WEBP_BUILD_CWEBP OR WEBP_BUILD_DWEBP OR
   parse_Makefile_am(${CMAKE_CURRENT_SOURCE_DIR}/imageio "IMAGEIOUTILS_SRCS"
     "imageio_util_[^ ]*")
   add_library(imageioutil ${IMAGEIOUTILS_SRCS})
-  target_link_libraries(imageioutil webp)
+  target_link_libraries(imageioutil PUBLIC webp ${WEBP_DEP_IMG_LIBRARIES})
 
   # Image-decoding utility library.
   parse_Makefile_am(${CMAKE_CURRENT_SOURCE_DIR}/imageio "IMAGEDEC_SRCS"
     "imagedec_[^ ]*")
   add_library(imagedec ${IMAGEDEC_SRCS})
-  target_link_libraries(imagedec imageioutil webp ${WEBP_DEP_IMG_LIBRARIES})
+  target_link_libraries(imagedec PUBLIC imageioutil webp ${WEBP_DEP_IMG_LIBRARIES})
 
   # Image-encoding utility library.
   parse_Makefile_am(${CMAKE_CURRENT_SOURCE_DIR}/imageio "IMAGEENC_SRCS"
     "imageenc_[^ ]*")
   add_library(imageenc ${IMAGEENC_SRCS})
-  target_link_libraries(imageenc webp)
+  target_link_libraries(imageenc PUBLIC webp ${WEBP_DEP_IMG_LIBRARIES})
 
   set_property(TARGET exampleutil imageioutil imagedec imageenc
     PROPERTY INCLUDE_DIRECTORIES
@@ -224,7 +221,7 @@ if(WEBP_BUILD_DWEBP)
     "dwebp")
   add_executable(dwebp ${DWEBP_SRCS})
   target_link_libraries(dwebp exampleutil imagedec imageenc webpdecoder)
-  install(TARGETS dwebp RUNTIME DESTINATION bin)
+  list(APPEND INSTALLED_TARGETS dwebp)
   set_property(TARGET dwebp PROPERTY INCLUDE_DIRECTORIES
     ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/src)
 endif()
@@ -236,7 +233,7 @@ if(WEBP_BUILD_CWEBP)
     "cwebp")
   add_executable(cwebp ${CWEBP_SRCS})
   target_link_libraries(cwebp exampleutil imagedec webp)
-  install(TARGETS cwebp RUNTIME DESTINATION bin)
+  list(APPEND INSTALLED_TARGETS cwebp)
   set_property(TARGET cwebp PROPERTY INCLUDE_DIRECTORIES
     ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/src)
 endif()
@@ -249,11 +246,11 @@ if(WEBP_BUILD_GIF2WEBP OR WEBP_BUILD_IMG2WEBP)
   parse_Makefile_am(${CMAKE_CURRENT_SOURCE_DIR}/src/mux "WEBP_MUX_SRCS"
     "")
   add_library(webpmux ${WEBP_MUX_SRCS})
-  target_link_libraries(webpmux webp)
+  target_link_libraries(webpmux PUBLIC webp)
   parse_version(mux/Makefile.am webpmux WEBP_MUX_SOVERSION)
   set_target_properties(webpmux PROPERTIES VERSION ${PACKAGE_VERSION}
     SOVERSION ${WEBP_MUX_SOVERSION})
-  list(APPEND INSTALLED_LIBRARIES webpmux)
+  list(APPEND INSTALLED_TARGETS webpmux)
 endif()
 
 if(WEBP_BUILD_GIF2WEBP)
@@ -264,7 +261,7 @@ if(WEBP_BUILD_GIF2WEBP)
   add_executable(gif2webp ${GIF2WEBP_SRCS})
   target_link_libraries(gif2webp exampleutil imageioutil webp webpmux
     ${WEBP_DEP_GIF_LIBRARIES})
-  install(TARGETS gif2webp RUNTIME DESTINATION bin)
+  list(APPEND INSTALLED_TARGETS gif2webp)
   set_property(TARGET gif2webp PROPERTY INCLUDE_DIRECTORIES
     ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/src)
 endif()
@@ -276,7 +273,7 @@ if(WEBP_BUILD_IMG2WEBP)
     "img2webp")
   add_executable(img2webp ${IMG2WEBP_SRCS})
   target_link_libraries(img2webp exampleutil imagedec imageioutil webp webpmux)
-  install(TARGETS img2webp RUNTIME DESTINATION bin)
+  list(APPEND INSTALLED_TARGETS img2webp)
   set_property(TARGET img2webp PROPERTY INCLUDE_DIRECTORIES
     ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/src)
 endif()
@@ -288,7 +285,7 @@ if (WEBP_BUILD_WEBPINFO)
     "webpinfo")
   add_executable(webpinfo ${WEBPINFO_SRCS})
   target_link_libraries(webpinfo exampleutil imageioutil)
-  install(TARGETS webpinfo RUNTIME DESTINATION bin)
+  list(APPEND INSTALLED_TARGETS webpinfo)
   set_property(TARGET webpinfo PROPERTY INCLUDE_DIRECTORIES
     ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/src)
 endif()
@@ -303,6 +300,7 @@ if(WEBP_BUILD_WEBP_JS)
       "-s EXPORTED_FUNCTIONS='[\"_WebpToSDL\"]' -s INVOKE_RUN=0")
   set_target_properties(webp_js PROPERTIES OUTPUT_NAME webp)
   target_compile_definitions(webp_js PUBLIC EMSCRIPTEN WEBP_HAVE_SDL)
+  list(APPEND INSTALLED_TARGETS webp_js)
 
   # WASM version
   add_executable(webp_wasm
@@ -314,6 +312,7 @@ if(WEBP_BUILD_WEBP_JS)
   target_compile_definitions(webp_wasm PUBLIC EMSCRIPTEN WEBP_HAVE_SDL)
 
   target_compile_definitions(webpdecoder PUBLIC EMSCRIPTEN)
+  list(APPEND INSTALLED_TARGETS webp_wasm)
 endif()
 
 # Generate the config.h file.
@@ -352,18 +351,19 @@ configure_package_config_file(
   INSTALL_DESTINATION ${ConfigPackageLocation}
 )
 
-foreach(INSTALLED_LIBRARY ${INSTALLED_LIBRARIES})
+foreach(INSTALLED_LIBRARY ${INSTALLED_TARGETS})
     target_include_directories(${INSTALLED_LIBRARY} PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/>
         $<INSTALL_INTERFACE:include>
     )
 endforeach()
 
-install(TARGETS ${INSTALLED_LIBRARIES}
+install(TARGETS ${INSTALLED_TARGETS}
     EXPORT ${targets_export_name}
     LIBRARY DESTINATION lib COMPONENT Runtime
     ARCHIVE DESTINATION lib COMPONENT Development
     RUNTIME DESTINATION bin COMPONENT Runtime
+    BUNDLE DESTINATION bin COMPONENT Runtime
     PUBLIC_HEADER DESTINATION include COMPONENT Development
     BUNDLE DESTINATION bin COMPONENT Runtime
 )
