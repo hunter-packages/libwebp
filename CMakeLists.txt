@@ -102,6 +102,15 @@ parse_Makefile_am(${WEBP_SRC_DIR}/utils "WEBP_UTILS_COMMON_SRCS" "COMMON")
 parse_Makefile_am(${WEBP_SRC_DIR}/utils "WEBP_UTILS_ENC_SRCS" "ENC")
 parse_Makefile_am(${WEBP_SRC_DIR}/utils "WEBP_UTILS_DEC_SRCS" "decode_[^ ]*")
 
+if(IOS)
+  # Support iOS universal build
+  list(
+      REMOVE_ITEM
+      WEBP_SIMD_FILES_NOT_TO_INCLUDE
+      "${CMAKE_CURRENT_LIST_DIR}/src/dsp/filters_sse2.c"
+  )
+endif()
+
 # Remove the files specific to SIMD we don't use.
 foreach(FILE ${WEBP_SIMD_FILES_NOT_TO_INCLUDE})
   list(REMOVE_ITEM WEBP_DSP_ENC_SRCS ${FILE})
