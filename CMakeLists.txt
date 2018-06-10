@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.0)
 
 include("cmake/HunterGate.cmake")
 HunterGate(
-    URL "https://github.com/ruslo/hunter/archive/v0.20.14.tar.gz"
-    SHA1 "18cdbf5c47abdda437c73bf5437b7c3c65afe47c"
+    URL "https://github.com/ruslo/hunter/archive/v0.22.9.tar.gz"
+    SHA1 "37bc2034f0b58f511fe891c17198b6e4e115483a"
 )
 
 project(libwebp C)

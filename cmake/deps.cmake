@@ -59,7 +59,8 @@ set(LT_OBJDIR ".libs/")
 # Find the standard C math library.
 find_library(MATH_LIBRARY NAMES m)
 if(MATH_LIBRARY)
-  list(APPEND WEBP_DEP_LIBRARIES ${MATH_LIBRARY})
+  # Fix relocation: avoid saving full path in install *Config.cmake file
+  list(APPEND WEBP_DEP_LIBRARIES m)
 endif()
 
 hunter_add_package(PNG)
