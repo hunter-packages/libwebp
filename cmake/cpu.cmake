@@ -47,7 +47,7 @@ set(WEBP_SIMD_FILES_TO_INCLUDE)
 set(WEBP_SIMD_FLAGS_TO_INCLUDE)
 
 if(${ANDROID})
-  if(${ANDROID_ABI} STREQUAL "armeabi-v7a")
+  if(${CMAKE_ANDROID_ARCH_ABI} STREQUAL "armeabi-v7a")
     # This is because Android studio uses the configuration "-march=armv7-a
     # -mfloat-abi=softfp -mfpu=vfpv3-d16" that does not trigger neon
     # optimizations but should (as this configuration does not exist anymore).
