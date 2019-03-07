@@ -172,7 +172,7 @@ else()
   add_definitions(-Wall)
 endif()
 include_directories(${WEBP_DEP_INCLUDE_DIRS})
-add_library(webpdecode OBJECT ${WEBP_DEC_SRCS})
+add_library(webpdecode OBJECT dummy.cpp ${WEBP_DEC_SRCS})
 target_include_directories(webpdecode
                            PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
                                    ${CMAKE_CURRENT_SOURCE_DIR})
@@ -188,6 +188,7 @@ target_include_directories(webputilsdecode
                            PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
                                    ${CMAKE_CURRENT_SOURCE_DIR})
 add_library(webpdecoder
+            dummy.cpp
             $<TARGET_OBJECTS:webpdecode>
             $<TARGET_OBJECTS:webpdspdecode>
             $<TARGET_OBJECTS:webputilsdecode>)
@@ -226,6 +227,7 @@ target_include_directories(webputils
                            PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
                                    ${CMAKE_CURRENT_SOURCE_DIR})
 add_library(webp
+            dummy.cpp
             $<TARGET_OBJECTS:webpdecode>
             $<TARGET_OBJECTS:webpdsp>
             $<TARGET_OBJECTS:webpencode>
